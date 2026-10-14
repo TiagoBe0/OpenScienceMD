@@ -1,0 +1,22 @@
+{
+  "name": "arxiv-alert",
+  "version": "1.0.0",
+  "description": "Latest arXiv physics papers, Molecular Dynamics first",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "fetch": "node src/fetch-once.js",
+    "digest": "node src/send-digest.js",
+    "archive": "node src/archive-cli.js"
+  },
+  "engines": {
+    "node": ">=20.19"
+  },
+  "dependencies": {
+    "better-sqlite3": "12.11.1",
+    "fast-xml-parser": "^4.5.0",
+    "nodemailer": "^10.1.0",
+    "pdfjs-dist": "5.6.205"
+  }
+}

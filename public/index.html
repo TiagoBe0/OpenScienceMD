@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpenScienceMD · arXiv Physics Alerts</title>
+  <link rel="icon" href="img/favicon.svg?v=7" type="image/svg+xml">
+  <link rel="icon" href="img/favicon-64.png?v=7" type="image/png" sizes="64x64">
+  <link rel="apple-touch-icon" href="img/apple-touch-icon.png?v=7">
+  <link rel="stylesheet" href="style.css?v=7">
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+      options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'input'] },
+      startup: { typeset: false },
+    };
+  </script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js"></script>
+  <script type="module" src="app.js?v=7"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="./" aria-label="OpenScienceMD, home">
+        <img class="brand-mark" src="img/logo-mark.png?v=7" alt="" width="292" height="320">
+        <span class="brand-text">
+          <img class="brand-wordmark" src="img/logo-wordmark.png?v=7" alt="OpenScienceMD" width="722" height="108">
+        </span>
+      </a>
+      <form id="search-form" class="search" role="search">
+        <label for="search" class="visually-hidden">Search papers</label>
+        <input id="search" type="search" placeholder="Search papers" autocomplete="off">
+        <button class="search-button" type="submit" aria-label="Search">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.8"/></svg>
+        </button>
+      </form>
+      <nav class="header-actions">
+        <!-- The admin-only actions are shown after logging in (see app.js). -->
+        <button id="manage-topics" class="link-button" type="button" hidden>My topics &amp; alerts</button>
+        <button id="refresh" class="button button-primary" type="button" hidden>Check for new papers</button>
+        <button id="logout" class="link-button subtle" type="button" hidden>Log out</button>
+        <button id="admin-login" class="link-button subtle" type="button" hidden>Admin</button>
+      </nav>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="tabs" role="tablist" aria-label="Scope">
+      <button id="tab-md" class="tab" role="tab" type="button" data-scope="md" aria-selected="true">
+        <span class="label-long">Molecular Dynamics</span><span class="label-short" aria-hidden="true">MD</span>
+        <span class="tab-count" id="count-md"></span>
+      </button>
+      <button id="tab-all" class="tab" role="tab" type="button" data-scope="all" aria-selected="false">
+        All physics <span class="tab-count" id="count-all"></span>
+      </button>
+      <!-- Private: only shown to the admin. -->
+      <button id="tab-archive" class="tab tab-private" role="tab" type="button" data-scope="archive" aria-selected="false" hidden>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+        Archive <span class="tab-count" id="count-archive"></span>
+      </button>
+      <!-- How fresh the data is: a pulsing dot while up to date (see app.js). -->
+      <div class="status-box">
+        <p id="status" class="status" data-state="loading" aria-live="polite">
+          <span class="status-dot" aria-hidden="true"></span><span id="status-text">Loading…</span>
+        </p>
+        <p class="sources">Updated from <span>arXiv</span> · <span>bioRxiv</span> · <span>ChemRxiv</span> ·
+          <span>Crossref</span> · <span>Europe PMC</span> · <span>Semantic Scholar</span> · <span>DOAJ</span> · <span>OpenAlex</span></p>
+      </div>
+    </div>
+
+    <div id="papers-view">
+    <div class="filter-bar" aria-label="Refine results">
+      <span class="refine-title">Refine by:</span>
+      <details class="filter" data-key="topic">
+        <summary data-title="My topics">My topics</summary>
+        <ul id="topics" class="facet-list"></ul>
+      </details>
+      <details class="filter" data-key="area">
+        <summary data-title="Subject area">Subject area</summary>
+        <ul id="areas" class="facet-list"></ul>
+      </details>
+      <details class="filter" data-key="source">
+        <summary data-title="Source">Source</summary>
+        <ul id="sources" class="facet-list"></ul>
+      </details>
+      <details class="filter" data-key="day">
+        <summary data-title="Submission date">Submission date</summary>
+        <ul id="days" class="facet-list"></ul>
+      </details>
+      <button id="clear-filters" class="link-button clear-filters" type="button" hidden>Clear filters</button>
+    </div>
+
+    <div class="layout">
+      <main>
+        <div class="results-head">
+          <p id="summary" class="results-count"></p>
+          <p class="sort">
+            <button id="expand-all" type="button" class="link-button expand-all" aria-pressed="false">Expand all</button>
+            <span class="sort-sep" aria-hidden="true"></span>
+            sorted by
+            <button type="button" class="sort-option" data-sort="relevance" aria-pressed="true">relevance</button>
+            <span aria-hidden="true">|</span>
+            <button type="button" class="sort-option" data-sort="date" aria-pressed="false">date</button>
+          </p>
+        </div>
+        <ol id="papers" class="result-list"></ol>
+        <p id="figure-note" class="figure-note" hidden></p>
+        <div class="more">
+          <button id="more" class="button button-secondary" type="button" hidden>Show more results</button>
+        </div>
+      </main>
+    </div>
+    </div>
+
+    <section id="archive-view" class="layout" aria-labelledby="archive-summary" hidden>
+      <div class="results-head">
+        <p id="archive-summary" class="results-count"></p>
+        <p id="archive-meta" class="sort"></p>
+      </div>
+      <p class="archive-intro">Your private archive of Molecular Dynamics papers. The search box above searches inside the full text of every archived PDF.</p>
+      <ol id="archive-list" class="result-list"></ol>
+      <div class="more">
+        <button id="archive-more" class="button button-secondary" type="button" hidden>Show more results</button>
+      </div>
+    </section>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container">
+      Data from the <a href="https://info.arxiv.org/help/api/index.html" target="_blank" rel="noopener">arXiv API</a>.
+      Thank you to arXiv for use of its open access interoperability.
+    </div>
+  </footer>
+
+  <dialog id="login-dialog" class="login-dialog" aria-labelledby="login-title">
+    <div class="dialog-head">
+      <h2 id="login-title">Admin login</h2>
+      <button id="login-close" class="icon-button" type="button" aria-label="Close">&times;</button>
+    </div>
+    <form id="login-form" class="dialog-body topic-form">
+      <label>Password
+        <input id="login-password" type="password" autocomplete="current-password" required>
+      </label>
+      <p id="login-error" class="error" role="alert"></p>
+      <div class="form-actions">
+        <button class="button button-primary" type="submit">Log in</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="topics-dialog" aria-labelledby="topics-dialog-title">
+    <div class="dialog-head">
+      <h2 id="topics-dialog-title">My topics &amp; alerts</h2>
+      <button id="dialog-close" class="icon-button" type="button" aria-label="Close">&times;</button>
+    </div>
+    <div class="dialog-body">
+      <p class="note">Molecular Dynamics papers are always detected and shown first. Topics let you follow other subjects too.</p>
+
+      <ul id="topic-list" class="topic-list"></ul>
+
+      <form id="topic-form" class="topic-form">
+        <h3 id="topic-form-title">New topic</h3>
+        <label>Name
+          <input id="topic-name" required maxlength="80" placeholder="Superconductivity">
+        </label>
+        <label>Keywords <span class="hint">(comma-separated)</span>
+          <input id="topic-keywords" placeholder="superconduct, Cooper pair, BCS">
+        </label>
+        <label>arXiv categories <span class="hint">(optional, comma-separated)</span>
+          <input id="topic-categories" placeholder="cond-mat.supr-con, cond-mat.str-el">
+        </label>
+        <p class="hint">A keyword also matches words that start with it: “superconduct” finds “superconductivity”. If you add categories, only papers in them are matched; with categories alone, all their papers match.</p>
+        <p id="topic-error" class="error" role="alert"></p>
+        <div class="form-actions">
+          <button id="topic-save" class="button button-primary" type="submit">Create topic</button>
+          <button id="topic-cancel" class="button button-secondary" type="button" hidden>Cancel</button>
+        </div>
+      </form>
+
+      <section class="email-box">
+        <h3>Daily email digest</h3>
+        <div id="email-status"></div>
+        <div class="form-actions">
+          <a class="button button-secondary" href="api/digest/preview" target="_blank" rel="noopener">Preview email</a>
+          <button id="send-now" class="button button-primary" type="button">Send now</button>
+        </div>
+        <p id="send-result" class="hint" role="status"></p>
+      </section>
+    </div>
+  </dialog>
+</body>
+</html>

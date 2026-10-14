@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="OpenScienceMD">
+  <rect width="128" height="128" fill="#FFFFFF"/>
+  <g fill="none" stroke="#E0640A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M23 88 V40 L41 76 L59 40 V88"/>
+    <path d="M75 88 V40 H81 A24 24 0 0 1 81 88 Z"/>
+  </g>
+</svg>
