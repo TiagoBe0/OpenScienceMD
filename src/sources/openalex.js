@@ -21,7 +21,7 @@ export async function fetchPapers({ from, to }) {
       filter: `from_publication_date:${from},to_publication_date:${to},type:article|preprint|review|letter`,
       'per-page': '200',
       cursor,
-      select: 'doi,title,abstract_inverted_index,authorships,publication_date,primary_location,best_oa_location,type',
+      select: 'doi,title,abstract_inverted_index,authorships,publication_date,primary_location,best_oa_location,type,cited_by_count',
     });
     const data = await getJson(`https://api.openalex.org/works?${q}`);
     for (const x of data.results ?? []) {
@@ -39,6 +39,7 @@ export async function fetchPapers({ from, to }) {
         arxivId,
         url: x.doi ?? landing,
         pdfUrl: x.best_oa_location?.pdf_url ?? null,
+        citations: x.cited_by_count ?? 0,
       });
     }
     cursor = data.meta?.next_cursor;

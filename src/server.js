@@ -97,9 +97,23 @@ const SOURCE_ORDER = ['arXiv', 'bioRxiv', 'ChemRxiv', 'Other preprints', 'Journa
 // Within each group, papers with a figure (graphical abstract) come first.
 const rank = (p) => (p.md.isMd ? 2 : p.topics.length ? 1 : 0);
 
+// The APIs expose no readership data, and brand-new papers have no citations yet, so "interest"
+// is a heuristic: how central MD is, topic matches, a figure, peer-reviewed venue, being indexed
+// by several sources, and (when a source reports them) citations.
+function interest(p) {
+  return (
+    p.md.score +
+    2 * p.topics.length +
+    (hasFigure(p) ? 2 : 0) +
+    (p.kind === 'journal' ? 2 : 0) +
+    (p.foundIn?.length ?? 0) +
+    2 * Math.log2(1 + (p.citations ?? 0))
+  );
+}
+
 function listPapers(params) {
   const scope = params.get('scope') === 'all' ? 'all' : 'md';
-  const sort = params.get('sort') === 'date' ? 'date' : 'relevance';
+  const sort = params.get('sort') === 'relevance' ? 'relevance' : 'date';
   const area = params.get('area');
   const topic = params.get('topic'); // a topic id, or "__any" for any topic
   const day = params.get('day'); // YYYY-MM-DD
@@ -124,12 +138,17 @@ function listPapers(params) {
   const matches = allFigures ? filtered : filtered.filter(listedByDefault);
   const withoutFigure = filtered.filter((p) => !listedByDefault(p));
 
+  // Default: newest day first, and within a day the most interesting papers first.
+  // "relevance" ignores the day and puts the most interesting papers first overall.
+  const day10 = (p) => p.published.slice(0, 10);
   matches.sort(
-    (a, b) =>
-      rank(b) - rank(a) ||
-      hasFigure(b) - hasFigure(a) ||
-      (sort === 'relevance' ? b.md.score - a.md.score : 0) ||
-      b.published.localeCompare(a.published)
+    sort === 'relevance'
+      ? (a, b) => rank(b) - rank(a) || interest(b) - interest(a) || b.published.localeCompare(a.published)
+      : (a, b) =>
+          day10(b).localeCompare(day10(a)) ||
+          rank(b) - rank(a) ||
+          interest(b) - interest(a) ||
+          b.published.localeCompare(a.published)
   );
 
   return {

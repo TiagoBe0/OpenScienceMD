@@ -69,6 +69,7 @@ function merge(old, fresh, sourceName) {
     venue: old.kind === 'journal' ? old.venue : cleanVenue(fresh.venue) ?? old.venue,
     kind: preprintServer(old.doi) ? 'preprint' : old.kind === 'journal' || fresh.kind === 'journal' ? 'journal' : 'preprint',
     pdfUrl: old.pdfUrl ?? fresh.pdfUrl ?? null,
+    citations: Math.max(old.citations ?? 0, fresh.citations ?? 0),
     published: old.published ?? fresh.published,
     foundIn: [...new Set([...old.foundIn, sourceName])],
   };
@@ -127,6 +128,7 @@ export function refresh(arxivPapers, { log = console.log } = {}) {
               kind: kindOf({ ...p, doi }),
               url: p.url ?? (doi ? `https://doi.org/${doi}` : null),
               pdfUrl: p.pdfUrl ?? null,
+              citations: p.citations ?? 0,
               foundIn: [source.name],
               seenAt: now.toISOString(),
             });
@@ -169,6 +171,7 @@ export function allPapers() {
       venue: r.venue,
       doi: r.doi,
       foundIn: r.foundIn,
+      citations: r.citations ?? 0,
       title: r.title,
       authors: r.authors,
       abstract: r.abstract,

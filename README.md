@@ -26,7 +26,11 @@ thermostats, Green–Kubo, …; title matches count double). Papers above a thre
 - The app opens on the **Molecular Dynamics** tab, which only shows those papers.
 - The **All physics** tab shows everything, with MD papers first, then papers matching your
   topics, then the rest.
-- “sorted by relevance” orders MD papers by score; “date” by submission date.
+- “newest first” (default) lists the latest day on top and, within each day, the most
+  interesting papers first. “most interesting” ignores the day. No API exports readership, so
+  “interesting” is a heuristic: MD score, topic matches, figure, journal venue, number of
+  sources that index it, and citations when OpenAlex / Semantic Scholar report them
+  (new papers rarely have any yet).
 - The list is compact: each paper shows its figure, title and authors. Click a title to see
   the figure caption, abstract, MD keywords and links, or use “Expand all”.
 - Filters (“Refine by”: topics, subject area, submission date) are dropdowns above the list.

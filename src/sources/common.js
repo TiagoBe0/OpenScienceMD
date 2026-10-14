@@ -1,6 +1,7 @@
 // Shared helpers for the extra literature sources. Every source returns papers as:
 // { title, authors: [], abstract, published: 'YYYY-MM-DD', venue, kind: 'journal' | 'preprint',
-//   doi, arxivId, url, pdfUrl }   (pdfUrl only when an open-access PDF is known)
+//   doi, arxivId, url, pdfUrl, citations }   (pdfUrl only when an open-access PDF is known;
+//   citations only from sources that report them)
 
 export const USER_AGENT = 'arxiv-alert/1.0 (personal research reading app)';
 export const MD_QUERY = 'molecular dynamics';

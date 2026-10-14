@@ -1,7 +1,7 @@
 const $ = (id) => document.getElementById(id);
 
 // fig: '' lists only papers with a figure; 'all' includes those without one.
-const filters = { scope: 'md', sort: 'relevance', topic: '', area: '', day: '', source: '', q: '', fig: '' };
+const filters = { scope: 'md', sort: 'date', topic: '', area: '', day: '', source: '', q: '', fig: '' };
 let page = 1;
 let pages = 1;
 let areaLabels = {};

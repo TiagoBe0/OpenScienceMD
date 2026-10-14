@@ -10,7 +10,7 @@ export async function fetchPapers({ from, to }) {
     const q = new URLSearchParams({
       query: '"molecular dynamics"',
       publicationDateOrYear: `${from}:${to}`,
-      fields: 'title,abstract,authors,externalIds,venue,journal,publicationDate,publicationTypes,openAccessPdf,url',
+      fields: 'title,abstract,authors,externalIds,venue,journal,publicationDate,publicationTypes,openAccessPdf,url,citationCount,influentialCitationCount',
     });
     if (token) q.set('token', token);
     const data = await getJson(`https://api.semanticscholar.org/graph/v1/paper/search/bulk?${q}`);
@@ -27,6 +27,8 @@ export async function fetchPapers({ from, to }) {
         arxivId: ids.ArXiv ?? null,
         url: ids.DOI ? `https://doi.org/${ids.DOI}` : x.url,
         pdfUrl: x.openAccessPdf?.url || null,
+        // Influential citations weigh more: they are the ones that build on the paper.
+        citations: (x.citationCount ?? 0) + 3 * (x.influentialCitationCount ?? 0),
       });
     }
     token = data.token;
