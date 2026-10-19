@@ -65,9 +65,14 @@ function mdOf(paper) {
 }
 
 const hasFigure = (p) => Boolean(p.figure?.images.length);
-// arXiv papers without a figure are hidden by default. Papers from the other sources are
-// always listed: many publishers don't let us reach their graphical abstracts.
-const listedByDefault = (p) => p.source !== 'arXiv' || hasFigure(p);
+// Older arXiv papers without a figure are hidden by default. Papers from the other sources are
+// always listed (many publishers don't let us reach their graphical abstracts), and so are
+// brand-new arXiv papers: their HTML version, where the figure comes from, appears later and
+// is checked again every few hours, so they must not wait for it to show up at the top.
+const listedByDefault = (p) =>
+  p.source !== 'arXiv' ||
+  hasFigure(p) ||
+  Date.now() - new Date(p.published).getTime() < figures.RECENT_DAYS * 24 * 60 * 60 * 1000;
 
 /**
  * All papers (arXiv, plus Molecular Dynamics papers from the other sources) with their MD
@@ -138,17 +143,13 @@ function listPapers(params) {
   const matches = allFigures ? filtered : filtered.filter(listedByDefault);
   const withoutFigure = filtered.filter((p) => !listedByDefault(p));
 
-  // Default: newest day first, and within a day the most interesting papers first.
-  // "relevance" ignores the day and puts the most interesting papers first overall.
-  const day10 = (p) => p.published.slice(0, 10);
+  // Default: strictly newest first, whether or not a paper has a figure.
+  // "relevance" ignores the date and puts the most interesting papers first overall.
+  const time = (p) => new Date(p.published).getTime() || 0;
   matches.sort(
     sort === 'relevance'
-      ? (a, b) => rank(b) - rank(a) || interest(b) - interest(a) || b.published.localeCompare(a.published)
-      : (a, b) =>
-          day10(b).localeCompare(day10(a)) ||
-          rank(b) - rank(a) ||
-          interest(b) - interest(a) ||
-          b.published.localeCompare(a.published)
+      ? (a, b) => rank(b) - rank(a) || interest(b) - interest(a) || time(b) - time(a)
+      : (a, b) => time(b) - time(a)
   );
 
   return {

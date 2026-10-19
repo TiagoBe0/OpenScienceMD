@@ -13,6 +13,10 @@ const REQUEST_DELAY_MS = 1500; // be gentle with arxiv.org and the publishers' s
 const DAY_MS = 24 * 60 * 60 * 1000;
 // The HTML version on arXiv, or the figures on a publisher's site, may appear later.
 const RETRY_MISSING_MS = { arxiv: 3 * DAY_MS, publisher: DAY_MS };
+// Brand-new arXiv papers usually get their HTML version some hours after submission,
+// so during their first days a missing figure is checked again every few hours.
+export const RECENT_DAYS = 3;
+const RETRY_RECENT_MS = 3 * 60 * 60 * 1000;
 // The first figure is near the top, so we stop reading the page once we have it.
 const MAX_HTML_BYTES = 4 * 1024 * 1024;
 const MAX_IMAGES = 4; // a figure made of panels has several images
@@ -141,8 +145,14 @@ async function fetchFigure(id) {
 const isArxiv = (paper) => (paper.source ?? 'arXiv') === 'arXiv';
 const laneOf = (paper) => (isArxiv(paper) ? 'arxiv' : 'publisher');
 
-function isFresh(entry, lane) {
-  return entry && (entry.images.length || Date.now() - entry.checkedAt < RETRY_MISSING_MS[lane]);
+const isRecent = (paper) => Date.now() - new Date(paper.published).getTime() < RECENT_DAYS * DAY_MS;
+
+function isFresh(entry, paper) {
+  if (!entry) return false;
+  if (entry.images.length) return true;
+  const lane = laneOf(paper);
+  const retryMs = lane === 'arxiv' && isRecent(paper) ? RETRY_RECENT_MS : RETRY_MISSING_MS[lane];
+  return Date.now() - entry.checkedAt < retryMs;
 }
 
 /** Whether a figure can be looked for at all (arXiv papers, and some publishers). */
@@ -155,7 +165,7 @@ const canHaveFigure = (paper) => isArxiv(paper) || publishers.supports(paper.doi
 export function getFigure(paper) {
   const { id } = paper;
   const lane = laneOf(paper);
-  if (isFresh(cache[id], lane)) return Promise.resolve(cache[id]);
+  if (isFresh(cache[id], paper)) return Promise.resolve(cache[id]);
   if (inFlight.has(id)) return inFlight.get(id);
 
   const task = queues[lane].then(async () => {
@@ -184,7 +194,7 @@ export const cachedFigure = (id) => cache[id] ?? null;
 
 /** Downloads figures for these papers in the background, skipping cached ones. */
 export function prefetch(papers, log = console.log) {
-  const missing = papers.filter((p) => canHaveFigure(p) && !isFresh(cache[p.id], laneOf(p)));
+  const missing = papers.filter((p) => canHaveFigure(p) && !isFresh(cache[p.id], p));
   if (!missing.length) return;
   log(`Fetching figures for ${missing.length} papers in the background…`);
   for (const p of missing) getFigure(p).catch((err) => console.warn(`Figure for ${p.id} failed:`, err.message));
